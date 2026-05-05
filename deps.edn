@@ -4,15 +4,15 @@
         metosin/malli {:mvn/version "0.20.1"}
         ai.djl.huggingface/tokenizers {:mvn/version "0.36.0"}
         com.github.haifengl/smile-core {:mvn/version "6.1.0"}
-        org.clojars.lukaszkorecki/utility-belt {:mvn/version "3.1.1"}}
+        org.clojars.lukaszkorecki/utility-belt {:mvn/version "3.1.1"}
+        org.clojars.lukaszkorecki/mokujin {:mvn/version "1.0.0.105"}}
  :aliases
  {:test
   {:extra-paths ["test"]
    :main-opts ["-m" "kaocha.runner"]
    :extra-deps {nubank/matcher-combinators {:mvn/version "3.10.0"}
                 lambdaisland/kaocha {:mvn/version "1.91.1392"}}}
-  :build {:deps {io.github.clojure/tools.build
-                 {:mvn/version "0.10.11"}
+  :build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.11"}
                  slipset/deps-deploy {:mvn/version "0.2.2"}}
           :ns-default build}
   :neil {:project {:name easy-onnx/easy-onnx}}}}
