@@ -12,7 +12,11 @@
    [:map
     [:tokenizer-path [:string {:min 1}]]]))
 
-(defrecord Tokenizer [tokenizer-path tokenizer]
+(defrecord Tokenizer [;; Configuration
+                      tokenizer-path
+
+                      ;; Managed
+                      tokenizer]
   AutoCloseable
   (close [_]
     (when tokenizer

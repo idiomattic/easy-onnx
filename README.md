@@ -50,6 +50,19 @@ net.clojars.easy-onnx/easy-onnx {:mvn/version "0.1.0-SNAPSHOT"}
 - **`easy-onnx.analysis`** — embedding analysis: DBSCAN clustering, UMAP
   2D projection.
 
+## JVM flags
+
+ONNX Runtime and Smile both use `System.load` to load native libraries.
+On Java 24+, the JVM emits a "restricted method has been called" warning
+for these calls and may block them in a future release. To silence the
+warning today and future-proof your app, add `--enable-native-access=ALL-UNNAMED`
+to your JVM options. For Clojure CLI projects:
+
+```clojure
+;; deps.edn
+{:aliases {:run {:jvm-opts ["--enable-native-access=ALL-UNNAMED"]}}}
+```
+
 ## Tests
 
 ```bash

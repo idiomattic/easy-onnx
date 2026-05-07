@@ -11,7 +11,12 @@
    [:map
     [:model-path [:string {:min 1}]]]))
 
-(defrecord Session [model-path env session]
+(defrecord Session [;; Configuration
+                    model-path
+
+                    ;; Managed
+                    env
+                    session]
   AutoCloseable
   (close [_]
     (when session
