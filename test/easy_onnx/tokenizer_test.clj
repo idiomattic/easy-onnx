@@ -9,14 +9,13 @@
 (defn- fixtures-present? []
   (.exists (java.io.File. ^String tokenizer-path)))
 
-(def ^:dynamic *fixtures?* false)
+(def fixtures? (atom false))
 
 (use-fixtures :each (fn [f]
-                      (binding [*fixtures?* (fixtures-present?)]
-                        (when-not *fixtures?*
-                          (println "Skipping easy-onnx.tokenizer-test: missing fixture at"
-                                   tokenizer-path))
-                        (f))))
+                      (reset! fixtures? (fixtures-present?))
+                      (when-not @fixtures?
+                        (throw (ex-info "Skipping easy-onnx.tokenizer-test: missing fixture at" {:tokenizer-path tokenizer-path})))
+                      (f)))
 
 (deftest create-returns-started-tokenizer
   (testing "create returns a Tokenizer with the underlying tokenizer set"

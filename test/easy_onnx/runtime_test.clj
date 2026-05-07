@@ -9,14 +9,13 @@
 (defn- fixtures-present? []
   (.exists (java.io.File. ^String model-path)))
 
-(def ^:dynamic *fixtures?* false)
+(def fixtures? (atom false))
 
 (use-fixtures :each (fn [f]
-                      (binding [*fixtures?* (fixtures-present?)]
-                        (when-not *fixtures?*
-                          (println "Skipping easy-onnx.runtime-test: missing model fixture at"
-                                   model-path))
-                        (f))))
+                      (reset! fixtures? (fixtures-present?))
+                      (when-not @fixtures?
+                        (throw (ex-info "Skipping easy-onnx.runtime-test: missing fixture at" {:model-path model-path})))
+                      (f)))
 
 (deftest create-returns-started-session
   (testing "create returns a Session with env and session populated"
