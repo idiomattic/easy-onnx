@@ -2,14 +2,23 @@
   (:require [clojure.test :refer [deftest is testing]]
             [com.stuartsierra.component :as component]
             [easy-onnx.embedder :as embedder]
-            [easy-onnx.onnx :as onnx]))
+            [easy-onnx.onnx :as onnx]
+            [easy-onnx.tokenizer :as tokenizer]))
 
 (defn onnx-model []
-  (-> (onnx/create {:model-path "resources/"})
+  (-> (onnx/create {:model-path "resources/ml/all-MiniLM-L6-v2/model.onnx"})
       (component/start)))
 
+(defn tokenizer []
+  (-> (tokenizer/create {:tokenizer-path "resources/ml/all-MiniLM-L6-v2/tokenizer.json"})
+      (component/start)))
+
+(defn test-system []
+  {:onnx-model (onnx-model)
+   :tokenizer (tokenizer)})
+
 (defn- embed! [text]
-  (embedder/embed! (test-util/sys) text))
+  (embedder/embed! (test-system) text))
 
 ;; ---------------------------------------------------------------------------
 ;; Embedding
