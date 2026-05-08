@@ -19,19 +19,19 @@
   opts)
 
 (defn- pom-template [version]
-  [[:description "FIXME: my new library."]
-   [:url "https://github.com/easy-onnx/easy-onnx"]
+  [[:description "A library wrapping com.microsoft.onnxruntime/onnxruntime and ai.djl.huggingface/tokenizers, providing an easy interface for running ML workloads within Clojure applications."]
+   [:url "https://github.com/idiomattic/easy-onnx"]
    [:licenses
     [:license
      [:name "Eclipse Public License"]
      [:url "http://www.eclipse.org/legal/epl-v10.html"]]]
    [:developers
     [:developer
-     [:name "Matthewlese"]]]
+     [:name "idiomattic"]]]
    [:scm
-    [:url "https://github.com/easy-onnx/easy-onnx"]
-    [:connection "scm:git:https://github.com/easy-onnx/easy-onnx.git"]
-    [:developerConnection "scm:git:ssh:git@github.com:easy-onnx/easy-onnx.git"]
+    [:url "https://github.com/idiomattic/easy-onnx"]
+    [:connection "scm:git:https://github.com/idiomattic/easy-onnx.git"]
+    [:developerConnection "scm:git:ssh:git@github.com:idiomattic/easy-onnx.git"]
     [:tag (str "v" version)]]])
 
 (defn- jar-opts [opts]
@@ -44,8 +44,7 @@
          :src-dirs ["src"]
          :pom-data (pom-template version)))
 
-(defn ci "Run the CI pipeline of tests (and build the JAR)." [opts]
-  (test opts)
+(defn jar "Build the JAR (without running tests)." [opts]
   (b/delete {:path "target"})
   (let [opts (jar-opts opts)]
     (println "\nWriting pom.xml...")
@@ -55,6 +54,10 @@
     (println "\nBuilding JAR..." (:jar-file opts))
     (b/jar opts))
   opts)
+
+(defn ci "Run the CI pipeline of tests (and build the JAR)." [opts]
+  (test opts)
+  (jar opts))
 
 (defn install "Install the JAR locally." [opts]
   (let [opts (jar-opts opts)]
