@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # build.clj uses (b/git-count-revs nil) for the version suffix;
+          # full history is required for that to count correctly.
+          fetch-depth: 0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Set up Clojure CLI
+        uses: DeLaGuardo/setup-clojure@13.4
+        with:
+          cli: "latest"
+
+      - name: Cache Maven and tools.deps caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.gitlibs
+          key: deps-${{ hashFiles('deps.edn') }}
+          restore-keys: |
+            deps-
+
+      - name: Cache MiniLM fixture
+        id: minilm-cache
+        uses: actions/cache@v4
+        with:
+          path: resources/ml/all-MiniLM-L6-v2
+          key: minilm-l6-v2-onnx-v1
+
+      - name: Download MiniLM fixture (cache miss)
+        if: steps.minilm-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p resources/ml/all-MiniLM-L6-v2
+          curl -L --fail --silent --show-error \
+            -o resources/ml/all-MiniLM-L6-v2/model.onnx \
+            https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx
+          curl -L --fail --silent --show-error \
+            -o resources/ml/all-MiniLM-L6-v2/tokenizer.json \
+            https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer.json
+
+      - name: Run tests
+        run: clojure -M:test
+
+  deploy:
+    name: Deploy to Clojars
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Set up Clojure CLI
+        uses: DeLaGuardo/setup-clojure@13.4
+        with:
+          cli: "latest"
+
+      - name: Cache Maven and tools.deps caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.gitlibs
+          key: deps-${{ hashFiles('deps.edn') }}
+          restore-keys: |
+            deps-
+
+      - name: Build JAR
+        run: clojure -T:build jar
+
+      - name: Deploy to Clojars
+        env:
+          CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
+          CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}
+        run: clojure -T:build deploy
