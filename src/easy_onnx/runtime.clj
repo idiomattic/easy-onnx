@@ -1,7 +1,7 @@
 (ns easy-onnx.runtime
   (:require [com.stuartsierra.component :as component]
             [malli.core :as m])
-  (:import [ai.onnxruntime OnnxTensor OnnxValue OrtEnvironment OrtLoggingLevel
+  (:import [ai.onnxruntime OnnxModelMetadata OnnxTensor OnnxValue OrtEnvironment OrtLoggingLevel
             OrtSession OrtSession$Result OrtSession$SessionOptions
             OrtSession$SessionOptions$OptLevel]
            [java.lang AutoCloseable]))
@@ -139,3 +139,25 @@
             (OrtSession$Result/.close result))))
       (finally
         (run! (fn [[_ ^OnnxTensor t]] (OnnxTensor/.close t)) tensors)))))
+
+(defn metadata
+  "Return the loaded ONNX model's metadata as a Clojure map.
+
+  Keys:
+    :producer-name     - tool that produced the model (e.g. \"pytorch\")
+    :graph-name        - graph name embedded in the model
+    :graph-description - graph description (often empty)
+    :domain            - model domain (often empty)
+    :description       - model description (often empty)
+    :version           - model version. Long.MAX_VALUE means \"unset\".
+    :custom-metadata   - {String String} map of any custom tags the
+                         exporter attached. Empty for most exports."
+  [{:keys [^OrtSession session]}]
+  (let [m (OrtSession/.getMetadata session)]
+    {:producer-name (OnnxModelMetadata/.getProducerName m)
+     :graph-name (OnnxModelMetadata/.getGraphName m)
+     :graph-description (OnnxModelMetadata/.getGraphDescription m)
+     :domain (OnnxModelMetadata/.getDomain m)
+     :description (OnnxModelMetadata/.getDescription m)
+     :version (OnnxModelMetadata/.getVersion m)
+     :custom-metadata (into {} (OnnxModelMetadata/.getCustomMetadata m))}))

@@ -1,7 +1,8 @@
 (ns easy-onnx.runtime-test
   (:require [clojure.test :refer [deftest is testing use-fixtures]]
             [com.stuartsierra.component :as component]
-            [easy-onnx.runtime :as runtime])
+            [easy-onnx.runtime :as runtime]
+            [matcher-combinators.test :refer [match?]])
   (:import [ai.onnxruntime OrtEnvironment OrtSession]))
 
 (def model-path "resources/ml/all-MiniLM-L6-v2/model.onnx")
@@ -89,3 +90,15 @@
     (is (thrown? AssertionError
                  (runtime/create {:model-path model-path
                                   :log-level :loud})))))
+
+(deftest metadata-returns-clojure-map
+  (testing "metadata returns a Clojure map with the expected keys"
+    (with-open [s (runtime/create {:model-path model-path})]
+      (let [m (runtime/metadata s)]
+        (is (match? {:custom-metadata {}
+                     :description ""
+                     :domain ""
+                     :graph-description ""
+                     :graph-name "main_graph"
+                     :producer-name "pytorch"
+                     :version 9223372036854775807} m))))))
