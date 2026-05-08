@@ -49,3 +49,26 @@
   (testing "missing :tokenizer-path fails the malli precondition"
     (is (thrown? AssertionError
                  (tokenizer/create {})))))
+
+(deftest truncation-caps-ids-at-max-length
+  (testing "with :truncation? true and :max-length n, ids are capped at n"
+    (let [long-text (apply str (repeat 200 "the quick brown fox "))]
+      (with-open [t (tokenizer/create {:tokenizer-path tokenizer-path
+                                       :truncation? true
+                                       :max-length 32})]
+        (let [ids (tokenizer/get-ids (tokenizer/encode t long-text))]
+          (is (<= (alength ^longs ids) 32)))))))
+
+(deftest pad-to-max-length-pads-short-ids
+  (testing "with :pad-to-max-length? true and :max-length n, short input produces n-length ids"
+    (with-open [t (tokenizer/create {:tokenizer-path tokenizer-path
+                                     :pad-to-max-length? true
+                                     :max-length 20})]
+      (let [ids (tokenizer/get-ids (tokenizer/encode t "hi"))]
+        (is (= 20 (alength ^longs ids)))))))
+
+(deftest no-padding-leaves-natural-length
+  (testing "without :pad-to-max-length?, short input keeps its natural length"
+    (with-open [t (tokenizer/create {:tokenizer-path tokenizer-path})]
+      (let [ids (tokenizer/get-ids (tokenizer/encode t "hi"))]
+        (is (< (alength ^longs ids) 10) "expected short ids, no padding")))))

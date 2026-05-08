@@ -63,3 +63,29 @@
   (testing "missing :model-path fails the malli precondition"
     (is (thrown? AssertionError
                  (runtime/create {})))))
+
+(deftest session-options-are-accepted
+  (testing "create accepts thread / optimization / log-level options and runs"
+    (with-open [s (runtime/create {:model-path model-path
+                                   :intra-op-num-threads 1
+                                   :inter-op-num-threads 1
+                                   :optimization-level :all
+                                   :log-level :warning})]
+      (is (instance? OrtSession (:session s)))
+      (let [inputs {"input_ids" (into-array [(long-array [101 7592 102])])
+                    "attention_mask" (into-array [(long-array [1 1 1])])
+                    "token_type_ids" (into-array [(long-array [0 0 0])])}
+            outputs (runtime/run-model s inputs)]
+        (is (contains? outputs "last_hidden_state"))))))
+
+(deftest invalid-optimization-level-fails
+  (testing "an unknown :optimization-level fails the malli precondition"
+    (is (thrown? AssertionError
+                 (runtime/create {:model-path model-path
+                                  :optimization-level :bogus})))))
+
+(deftest invalid-log-level-fails
+  (testing "an unknown :log-level fails the malli precondition"
+    (is (thrown? AssertionError
+                 (runtime/create {:model-path model-path
+                                  :log-level :loud})))))
