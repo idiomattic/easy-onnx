@@ -28,6 +28,11 @@ jobs:
         with:
           cli: "latest"
 
+      - name: Install libopenblas
+        # Smile's UMAP/PCA path calls SVD via a LAPACK FFI binding that
+        # System.loadLibrary's "openblas". The runner doesn't ship it.
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev
+
       - name: Cache Maven and tools.deps caches
         uses: actions/cache@v4
         with:
