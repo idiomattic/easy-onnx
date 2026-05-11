@@ -7,18 +7,16 @@ A Clojure library for running ONNX models and tokenizing text with
 HuggingFace tokenizers, plus opinionated helpers for sentence-transformer
 text embedding and embedding analysis (DBSCAN clustering, UMAP projection).
 
-## Status
-
-Pre-release. The library is internally split into four sections — `runtime`,
-`tokenizer`, `embed`, `analysis` — designed for future extraction into
-separate artifacts if needed.
+> [!WARNING]
+> This library should be considered as in a pre-release state. It will likely be split into separate artifacts
+> for the `tokenizer`, `runtime`, etc. so that each does not carry bloat of the others.
 
 ## Installation
 
 Add to `deps.edn`:
 
 ```clojure
-net.clojars.easy-onnx/easy-onnx {:mvn/version "0.1.0-SNAPSHOT"}
+net.clojars.idiomattic/easy-onnx {:mvn/version "0.1.XXX"}
 ```
 
 (Maven coordinates are tentative; will be confirmed before first release.)
