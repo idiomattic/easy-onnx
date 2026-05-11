@@ -1,5 +1,8 @@
 # easy-onnx
 
+[![Clojars Project](https://img.shields.io/clojars/v/net.clojars.idiomattic/easy-onnx.svg)](https://clojars.org/net.clojars.idiomattic/easy-onnx)
+[![CI](https://github.com/idiomattic/easy-onnx/actions/workflows/ci.yml/badge.svg)](https://github.com/idiomattic/easy-onnx/actions/workflows/ci.yml)
+
 A Clojure library for running ONNX models and tokenizing text with
 HuggingFace tokenizers, plus opinionated helpers for sentence-transformer
 text embedding and embedding analysis (DBSCAN clustering, UMAP projection).
@@ -38,9 +41,9 @@ net.clojars.easy-onnx/easy-onnx {:mvn/version "0.1.0-SNAPSHOT"}
 ## Sections
 
 - **`easy-onnx.runtime`** — load and run ONNX models. Wraps `OrtEnvironment`
-  + `OrtSession`. `create` returns a started `Session`; `component` returns
-  an unstarted one for use with Stuart Sierra Component. Both implement
-  `AutoCloseable` and Lifecycle.
+  - `OrtSession`. `create` returns a started `Session`; `component` returns
+    an unstarted one for use with Stuart Sierra Component. Both implement
+    `AutoCloseable` and Lifecycle.
 - **`easy-onnx.tokenizer`** — wrap a HuggingFace tokenizer. Same shape:
   `create`, `component`, `encode`, `get-ids`, `get-mask`, `close`.
 - **`easy-onnx.embed`** — modality-agnostic vector helpers: `cosine-similarity`,
