@@ -104,3 +104,22 @@
       (is (instance? OnnxTextGenerator (:generator started)))
       (let [stopped (component/stop started)]
         (is (nil? (:generator stopped)))))))
+
+(deftest missing-preset-fails-precondition
+  (testing "create without :preset fails the malli precondition"
+    (is (thrown? AssertionError (otg/create {})))))
+
+(deftest invalid-preset-fails-precondition
+  (testing "an unknown :preset value fails the malli precondition"
+    (is (thrown? AssertionError
+                 (otg/create {:preset :nonexistent})))))
+
+(deftest invalid-temperature-fails-precondition
+  (testing "a negative :temperature fails the malli precondition"
+    (is (thrown? AssertionError
+                 (otg/create {:preset preset :temperature -1.0})))))
+
+(deftest invalid-top-p-fails-precondition
+  (testing "a :top-p > 1.0 fails the malli precondition"
+    (is (thrown? AssertionError
+                 (otg/create {:preset preset :top-p 2.0})))))
