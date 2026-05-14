@@ -67,3 +67,9 @@
                     (fn [token] (swap! tokens conj token)))]
         (is (pos? (count @tokens)))
         (is (= (:text result) (apply str @tokens)))))))
+
+(deftest bogus-base-dir-throws
+  (testing ":base-dir pointing at a nonexistent directory throws on create"
+    (is (thrown? Exception
+                 (otg/create {:preset preset
+                              :base-dir "/nonexistent/base/dir"})))))

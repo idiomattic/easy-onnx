@@ -1,5 +1,6 @@
 (ns easy-onnx.inference.onnx-text-generator
   (:require [com.stuartsierra.component :as component]
+            [easy-onnx.inference.core :as core]
             [malli.core :as m])
   (:import [io.github.inference4j.generation GenerationResult]
            [io.github.inference4j.nlp OnnxTextGenerator]
@@ -13,7 +14,9 @@
     [:max-new-tokens   {:optional true} [:int    {:min 1}]]
     [:temperature      {:optional true} [:double {:min 0.0}]]
     [:top-k            {:optional true} [:int    {:min 0}]]
-    [:top-p            {:optional true} [:double {:min 0.0 :max 1.0}]]]))
+    [:top-p            {:optional true} [:double {:min 0.0 :max 1.0}]]
+    [:base-dir         {:optional true} [:string {:min 1}]]
+    [:model-source     {:optional true} :any]]))
 
 (def ^:private preset-factory-map
   {:gpt2            #(OnnxTextGenerator/gpt2)
@@ -24,8 +27,10 @@
    :gemma2          #(OnnxTextGenerator/gemma2)})
 
 (defn- ^OnnxTextGenerator build-generator
-  [{:keys [preset max-new-tokens temperature top-k top-p]}]
+  [{:keys [preset max-new-tokens temperature top-k top-p] :as config}]
   (let [builder ((preset-factory-map preset))]
+    (when-let [src (core/resolve-source config)]
+      (.modelSource builder src))
     (when max-new-tokens
       (.maxNewTokens builder (int max-new-tokens)))
     (when temperature
@@ -48,6 +53,8 @@
                       temperature
                       top-k
                       top-p
+                      base-dir
+                      model-source
 
                       ;; Managed
                       generator]
@@ -77,7 +84,12 @@
     :temperature    - sampling temperature in [0.0, ...). 0.0 = greedy decoding.
     :top-k          - keep the top-K candidate tokens; 0 disables (default 0).
     :top-p          - keep tokens whose cumulative probability reaches top-P;
-                      0.0 disables (default 0.0)."
+                      0.0 disables (default 0.0).
+    :base-dir       - Local directory containing model subdirectories. Switches to
+                      LocalModelSource: <base-dir>/<preset-model-id>/ must exist.
+                      Useful for offline use or custom model layouts.
+    :model-source   - Escape hatch: a Java io.github.inference4j.model.ModelSource
+                      instance, used directly. Overrides :base-dir if both set."
   [config]
   {:pre [(m/validate Config config)]}
   (component/start (map->Generator (assoc config :generator nil))))
