@@ -1,18 +1,16 @@
 {:paths ["src" "resources"]
  :deps {org.clojure/clojure {:mvn/version "1.12.4"}
-        com.microsoft.onnxruntime/onnxruntime {:mvn/version "1.25.1"}
-        ai.djl.huggingface/tokenizers {:mvn/version "0.36.0"}
+        io.github.inference4j/inference4j-core {:mvn/version "0.10.0"}
         com.stuartsierra/component {:mvn/version "1.1.0"}
         metosin/malli {:mvn/version "0.20.1"}
         com.github.haifengl/smile-core {:mvn/version "6.1.0"}}
- :aliases
- {:test {:extra-paths ["test"]
-         :main-opts ["-m" "kaocha.runner"]
-         :jvm-opts ["--enable-native-access=ALL-UNNAMED"]
-         :extra-deps {nubank/matcher-combinators {:mvn/version "3.10.0"}
-                      lambdaisland/kaocha {:mvn/version "1.91.1392"}}}
-  :build {:deps {org.clojure/clojure {:mvn/version "1.12.4"}
-                 io.github.clojure/tools.build {:mvn/version "0.10.11"}
-                 slipset/deps-deploy {:mvn/version "0.2.2"}}
-          :ns-default build}
-  :neil {:project {:name easy-onnx/easy-onnx}}}}
+ :aliases {:test {:extra-paths ["test"]
+                  :main-opts ["-m" "kaocha.runner"]
+                  :jvm-opts ["--enable-native-access=ALL-UNNAMED"]
+                  :extra-deps {nubank/matcher-combinators {:mvn/version "3.10.0"}
+                               lambdaisland/kaocha {:mvn/version "1.91.1392"}}}
+           :build {:deps {org.clojure/clojure {:mvn/version "1.12.4"}
+                          io.github.clojure/tools.build {:mvn/version "0.10.11"}
+                          slipset/deps-deploy {:mvn/version "0.2.2"}}
+                   :ns-default build}
+           :neil {:project {:name easy-onnx/easy-onnx}}}}

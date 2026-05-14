@@ -30,3 +30,31 @@
       (is (= 5 (count coords)))
       (is (every? #(= 2 (count %)) coords))
       (is (every? #(every? number? %) coords)))))
+
+(deftest cosine-similarity-of-identical-vectors
+  (testing "identical vectors have similarity ~1.0"
+    (let [a (v 1.0 2.0 3.0 4.0)]
+      (is (< 0.999 (analysis/cosine-similarity a a))))))
+
+(deftest cosine-similarity-of-orthogonal-vectors
+  (testing "orthogonal unit vectors have similarity ~0.0"
+    (let [a (v 1.0 0.0)
+          b (v 0.0 1.0)]
+      (is (< (Math/abs (analysis/cosine-similarity a b)) 0.001)))))
+
+(deftest cosine-similarity-of-opposite-vectors
+  (testing "opposite-direction vectors have similarity ~-1.0"
+    (let [a (v 1.0 2.0 3.0)
+          b (v -1.0 -2.0 -3.0)]
+      (is (> -0.999 (analysis/cosine-similarity a b))))))
+
+(deftest cosine-distance-of-identical-vectors
+  (testing "identical vectors have distance ~0.0"
+    (let [a (v 1.0 2.0 3.0)]
+      (is (< (analysis/cosine-distance a a) 0.001)))))
+
+(deftest cosine-distance-of-orthogonal-vectors
+  (testing "orthogonal unit vectors have distance ~1.0"
+    (let [a (v 1.0 0.0)
+          b (v 0.0 1.0)]
+      (is (< 0.999 (analysis/cosine-distance a b))))))

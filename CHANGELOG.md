@@ -4,9 +4,44 @@ All notable changes to this project will be documented in this file.
 This change log follows the conventions of
 [keepachangelog.com](http://keepachangelog.com/).
 
-## [Unreleased]
+## 0.2.0 — 2026-05-14
+
+### Changed
+
+- Swapped `com.microsoft.onnxruntime/onnxruntime` and `ai.djl.huggingface/tokenizers` for `io.github.inference4j/inference4j-core 0.10.0`. inference4j wraps both ONNX Runtime and HuggingFace tokenizers and provides idiomatic per-task wrappers (sentence-transformer embedding, classification, reranking, etc.).
+- The public API contracted from five namespaces to two:
+  - **New** `easy-onnx.inference.sentence-transformer-embedder` (replaces `runtime` + `tokenizer` + `embed.text`).
+  - **Updated** `easy-onnx.analysis` (now also exposes `cosine-similarity` / `cosine-distance`, lifted from the deleted `easy-onnx.embed`).
+- Model loading is now automatic. The first call to `ste/create` downloads to `~/.cache/inference4j/`. No more manual `resources/ml/` fixture.
+- Embedder gains `:pooling` (`:mean`/`:cls`/`:max`), `:normalize?` (L2), `:text-prefix` (E5/Nomic support), and `:max-length` config keys.
+
+### Removed
+
+- `easy-onnx.runtime`, `easy-onnx.tokenizer`, `easy-onnx.embed`, and `easy-onnx.embed.text` namespaces (and their tests).
+- `:log-level` config key (not exposed by inference4j's task wrappers).
+- The manual MiniLM fixture in `resources/ml/`. inference4j manages model caching.
+
+### Migration
+
+Before:
+
+```clojure
+(with-open [r (runtime/create   {:model-path "/path/to/model.onnx"})
+            t (tokenizer/create {:tokenizer-path "/path/to/tokenizer.json"})]
+  (embed-text/embed {:runtime r :tokenizer t} "hello world"))
+```
+
+After:
+
+```clojure
+(with-open [e (ste/create {:model-id "inference4j/all-MiniLM-L6-v2"})]
+  (ste/encode e "hello world"))
+```
+
+## 0.1.0
 
 ### Added
+
 - `easy-onnx.runtime` — ONNX session wrapper with `create` / `component` /
   `run-model` / `close`. AutoCloseable + Stuart Sierra Lifecycle.
 - `easy-onnx.tokenizer` — HuggingFace tokenizer wrapper with `create` /
