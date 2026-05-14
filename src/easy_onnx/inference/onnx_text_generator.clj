@@ -3,7 +3,8 @@
             [malli.core :as m])
   (:import [io.github.inference4j.generation GenerationResult]
            [io.github.inference4j.nlp OnnxTextGenerator]
-           [java.lang AutoCloseable]))
+           [java.lang AutoCloseable]
+           [java.util.function Consumer]))
 
 (def Config
   (m/schema
@@ -98,3 +99,11 @@
   Returns {:text :prompt-tokens :generated-tokens :duration}."
   [{:keys [^OnnxTextGenerator generator]} ^String prompt]
   (->result-map (OnnxTextGenerator/.generate generator prompt)))
+
+(defn generate-streaming
+  "Generate text for `prompt`, calling `on-token` (a 1-arg fn) with each token
+  as it's produced. Returns the same map shape as `generate`."
+  [{:keys [^OnnxTextGenerator generator]} ^String prompt on-token]
+  (let [consumer (reify Consumer
+                   (accept [_ token] (on-token token)))]
+    (->result-map (OnnxTextGenerator/.generate generator prompt consumer))))

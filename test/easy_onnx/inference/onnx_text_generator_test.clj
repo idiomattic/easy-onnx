@@ -56,3 +56,14 @@
                                :top-p 0.9})]
       (let [result (otg/generate g "Hi")]
         (is (pos-int? (:generated-tokens result)))))))
+
+(deftest generate-streaming-fires-on-token-and-returns-result
+  (testing "on-token is called per token; concatenated tokens equal the full :text"
+    (with-open [g (otg/create {:preset preset :max-new-tokens 8 :temperature 0.0})]
+      (let [tokens (atom [])
+            result (otg/generate-streaming
+                    g
+                    "Hello"
+                    (fn [token] (swap! tokens conj token)))]
+        (is (pos? (count @tokens)))
+        (is (= (:text result) (apply str @tokens)))))))
