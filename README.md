@@ -3,10 +3,10 @@
 [![Clojars Project](https://img.shields.io/clojars/v/net.clojars.idiomattic/easy-onnx.svg)](https://clojars.org/net.clojars.idiomattic/easy-onnx)
 [![CI](https://github.com/idiomattic/easy-onnx/actions/workflows/ci.yml/badge.svg)](https://github.com/idiomattic/easy-onnx/actions/workflows/ci.yml)
 
-A Clojure library for sentence-transformer text embedding (via
-[inference4j](https://github.com/inference4j/inference4j)) plus embedding
-analysis (DBSCAN clustering, UMAP projection, cosine similarity via
-[smile-core](https://github.com/haifengl/smile)).
+A Clojure library for sentence-transformer text embedding and small-model
+text generation (via [inference4j](https://github.com/inference4j/inference4j))
+plus embedding analysis (DBSCAN clustering, UMAP projection, cosine similarity
+via [smile-core](https://github.com/haifengl/smile)).
 
 > [!WARNING]
 > This library should be considered pre-release. Both top-level sections
@@ -18,7 +18,7 @@ analysis (DBSCAN clustering, UMAP projection, cosine similarity via
 Add to `deps.edn`:
 
 ```clojure
-net.clojars.idiomattic/easy-onnx {:mvn/version "0.2.XXX"}
+net.clojars.idiomattic/easy-onnx {:mvn/version "0.3.XXX"}
 ```
 
 ## Quickstart
@@ -76,6 +76,75 @@ Component system:
 ```clojure
 (component/system-map
   :embedder (ste/component {:model-id "inference4j/all-MiniLM-L6-v2"}))
+```
+
+### `easy-onnx.inference.onnx-text-generator`
+
+Wraps [inference4j's `OnnxTextGenerator`](https://github.com/inference4j/inference4j).
+Six preset model families. Supports blocking and streaming generation.
+
+```clojure
+(require '[easy-onnx.inference.onnx-text-generator :as otg])
+
+;; one-shot blocking
+(with-open [g (otg/create {:preset :qwen2
+                           :max-new-tokens 100
+                           :temperature 0.7
+                           :top-k 50})]
+  (-> (otg/generate g "Explain gravity")
+      :text
+      println))
+
+;; streaming
+(with-open [g (otg/create {:preset :qwen2 :max-new-tokens 100})]
+  (otg/generate-streaming g "Explain gravity"
+                          (fn [token] (print token) (flush))))
+```
+
+`generate` and `generate-streaming` both return `{:text :prompt-tokens
+:generated-tokens :duration}`. `:duration` is a `java.time.Duration`.
+
+#### Presets
+
+| Preset            | Model                                       | Approx. cached size |
+| ----------------- | ------------------------------------------- | ------------------- |
+| `:gpt2`           | GPT-2 124M (completion)                     | ~500 MB             |
+| `:smol-lm-2`      | SmolLM2-360M-Instruct (ChatML)              | ~700 MB             |
+| `:smol-lm-2-1-7b` | SmolLM2-1.7B-Instruct (FP16)                | ~3.4 GB             |
+| `:qwen2`          | Qwen2.5-1.5B-Instruct (ChatML)              | ~3 GB               |
+| `:tiny-llama`     | TinyLlama-1.1B-Chat                         | ~2.2 GB             |
+| `:gemma2`         | Gemma 2-2B-IT (gated; bring your own files) | —                   |
+
+Each preset bundles its model id, special tokens, stop sequences, chat
+template, and tokenizer. The first call downloads to
+`~/.cache/inference4j/`; subsequent calls hit the cache. Gemma 2 is gated
+on HuggingFace, so you must accept Google's license, download the ONNX
+model yourself, and provide it via `:base-dir` or `:model-source`.
+
+#### Sampling
+
+```clojure
+(otg/create {:preset :qwen2
+             :max-new-tokens 100 ;; default 256
+             :temperature 0.7    ;; 0.0 = greedy
+             :top-k 50           ;; 0 = disabled
+             :top-p 0.9})        ;; 0.0 = disabled
+```
+
+#### Model loading
+
+- **Default** (`:preset` only): auto-download from HuggingFace.
+- **Local** (`:base-dir "/some/dir"`): load from
+  `<base-dir>/<preset-model-id>/` via `LocalModelSource`. Useful for
+  air-gapped environments or gated models.
+- **Custom** (`:model-source <ModelSource-instance>`): bring your own
+  `io.github.inference4j.model.ModelSource`.
+
+#### Component integration
+
+```clojure
+(component/system-map
+  :generator (otg/component {:preset :qwen2}))
 ```
 
 ### `easy-onnx.analysis`

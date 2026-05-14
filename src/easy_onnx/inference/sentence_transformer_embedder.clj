@@ -1,12 +1,9 @@
 (ns easy-onnx.inference.sentence-transformer-embedder
   (:require [com.stuartsierra.component :as component]
+            [easy-onnx.inference.core :as core]
             [malli.core :as m])
-  (:import [ai.onnxruntime OrtSession$SessionOptions OrtSession$SessionOptions$OptLevel]
-           [io.github.inference4j.model LocalModelSource ModelSource]
-           [io.github.inference4j.nlp PoolingStrategy SentenceTransformerEmbedder]
-           [io.github.inference4j.session SessionConfigurer]
-           [java.lang AutoCloseable]
-           [java.nio.file Path]))
+  (:import [io.github.inference4j.nlp PoolingStrategy SentenceTransformerEmbedder]
+           [java.lang AutoCloseable]))
 
 (def Config
   (m/schema
@@ -29,42 +26,15 @@
    :cls PoolingStrategy/CLS
    :max PoolingStrategy/MAX})
 
-(def ^:private opt-level-map
-  {:none OrtSession$SessionOptions$OptLevel/NO_OPT
-   :basic OrtSession$SessionOptions$OptLevel/BASIC_OPT
-   :extended OrtSession$SessionOptions$OptLevel/EXTENDED_OPT
-   :all OrtSession$SessionOptions$OptLevel/ALL_OPT})
-
-(defn- ->session-configurer
-  ^SessionConfigurer [{:keys [intra-op-num-threads inter-op-num-threads optimization-level]}]
-  (reify SessionConfigurer
-    (configure [_ opts]
-      (let [opts ^OrtSession$SessionOptions opts]
-        (when intra-op-num-threads
-          (.setIntraOpNumThreads opts intra-op-num-threads))
-        (when inter-op-num-threads
-          (.setInterOpNumThreads opts inter-op-num-threads))
-        (when optimization-level
-          (.setOptimizationLevel opts (opt-level-map optimization-level)))))))
-
-(defn- resolve-source
-  "Pick a ModelSource based on config keys.
-  Returns nil to mean 'let inference4j use its default (HuggingFaceModelSource)'."
-  ^ModelSource [{:keys [model-source base-dir]}]
-  (cond
-    model-source model-source
-    base-dir (LocalModelSource. (Path/of ^String base-dir (into-array String [])))
-    :else nil))
-
 (defn- build-embedder
   ^SentenceTransformerEmbedder
   [{:keys [model-id pooling normalize? text-prefix max-length session-options] :as config}]
   (let [builder (SentenceTransformerEmbedder/builder)]
     (.modelId builder model-id)
-    (when-let [src (resolve-source config)]
+    (when-let [src (core/resolve-source config)]
       (.modelSource builder src))
     (when session-options
-      (.sessionOptions builder (->session-configurer session-options)))
+      (.sessionOptions builder (core/->session-configurer session-options)))
     (when pooling
       (.poolingStrategy builder (pooling-strategy-map pooling)))
     (when normalize?
