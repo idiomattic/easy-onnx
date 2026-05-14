@@ -1,23 +1,45 @@
 (ns easy-onnx.inference.sentence-transformer-embedder
   (:require [com.stuartsierra.component :as component]
             [malli.core :as m])
-  (:import [io.github.inference4j.nlp SentenceTransformerEmbedder]
+  (:import [io.github.inference4j.nlp PoolingStrategy SentenceTransformerEmbedder]
            [java.lang AutoCloseable]))
 
 (def Config
   (m/schema
    [:map
-    [:model-id [:string {:min 1}]]]))
+    [:model-id     [:string {:min 1}]]
+    [:pooling      {:optional true} [:enum :mean :cls :max]]
+    [:normalize?   {:optional true} :boolean]
+    [:text-prefix  {:optional true} [:string {:min 1}]]
+    [:max-length   {:optional true} [:int {:min 1}]]]))
+
+(def ^:private pooling-strategy-map
+  {:mean PoolingStrategy/MEAN
+   :cls  PoolingStrategy/CLS
+   :max  PoolingStrategy/MAX})
 
 (defn- build-embedder
   ^SentenceTransformerEmbedder
-  [{:keys [model-id]}]
-  (-> (SentenceTransformerEmbedder/builder)
-      (.modelId model-id)
-      (.build)))
+  [{:keys [model-id pooling normalize? text-prefix max-length]}]
+  (let [builder (SentenceTransformerEmbedder/builder)]
+    (.modelId builder model-id)
+    (when pooling
+      (.poolingStrategy builder (pooling-strategy-map pooling)))
+    (when normalize?
+      (.normalize builder))
+    (when text-prefix
+      (.textPrefix builder text-prefix))
+    (when max-length
+      (.maxLength builder max-length))
+    (.build builder)))
 
 (defrecord Embedder [;; Config
                      model-id
+                     pooling
+                     normalize?
+                     text-prefix
+                     max-length
+
                      ;; Managed
                      embedder]
   AutoCloseable
@@ -35,11 +57,20 @@
     (assoc this :embedder nil)))
 
 (defn create
-  "Build and start a SentenceTransformerEmbedder.
+  "Build and start a SentenceTransformerEmbedder. Use with `with-open` for one-shot use.
 
   Required:
     :model-id - HuggingFace-style model id (e.g. \"inference4j/all-MiniLM-L6-v2\").
-                On first call, inference4j downloads to ~/.cache/inference4j/."
+                On first call, inference4j downloads to ~/.cache/inference4j/.
+
+  Optional:
+    :pooling     - one of :mean :cls :max (default :mean).
+    :normalize?  - L2-normalize the output (default false). Recommended when comparing
+                   with cosine similarity (e.g. BGE, GTE, E5 families).
+    :text-prefix - String prepended to every input before encoding. Required by some
+                   model families (E5: \"query: \" / \"passage: \"; Nomic similar).
+    :max-length  - Maximum token sequence length. Inputs longer than this are
+                   truncated. Defaults to 512 (inference4j's default)."
   [config]
   {:pre [(m/validate Config config)]}
   (component/start (map->Embedder (assoc config :embedder nil))))

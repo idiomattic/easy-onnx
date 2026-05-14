@@ -54,3 +54,38 @@
           batch (ste/encode-batch @embedder texts)
           singles (mapv #(ste/encode @embedder %) texts)]
       (is (= (mapv seq batch) (mapv seq singles))))))
+
+(deftest normalize-produces-unit-norm-vectors
+  (testing "with :normalize? true, embeddings have L2 norm ~1.0"
+    (with-open [e (ste/create {:model-id model-id :normalize? true})]
+      (let [v (ste/encode e "normalize me")
+            norm (Math/sqrt (areduce ^floats v i acc 0.0
+                                     (+ acc (* (aget ^floats v i)
+                                               (aget ^floats v i)))))]
+        (is (< (Math/abs (- 1.0 norm)) 0.001))))))
+
+(deftest pooling-cls-differs-from-mean
+  (testing "CLS pooling and MEAN pooling produce different embeddings for the same input"
+    (with-open [mean-e (ste/create {:model-id model-id :pooling :mean})
+                cls-e  (ste/create {:model-id model-id :pooling :cls})]
+      (let [text "this sentence is for testing pooling"
+            mean-v (ste/encode mean-e text)
+            cls-v  (ste/encode cls-e text)]
+        (is (not= (seq mean-v) (seq cls-v)))))))
+
+(deftest text-prefix-changes-embedding
+  (testing "applying a text-prefix changes the resulting embedding"
+    (with-open [plain    (ste/create {:model-id model-id})
+                prefixed (ste/create {:model-id model-id :text-prefix "query: "})]
+      (let [text "what is the capital of France"
+            v1 (ste/encode plain text)
+            v2 (ste/encode prefixed text)]
+        (is (not= (seq v1) (seq v2)))))))
+
+(deftest max-length-truncates-long-input
+  (testing ":max-length truncates input to keep encode fast and bounded"
+    (with-open [e (ste/create {:model-id model-id :max-length 16})]
+      (let [long-text (apply str (repeat 200 "the quick brown fox "))
+            result (ste/encode e long-text)]
+        (is (= 384 (alength ^floats result)))
+        (is (every? #(Float/isFinite %) (seq result)))))))
