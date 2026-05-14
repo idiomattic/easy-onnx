@@ -106,14 +106,14 @@ Six preset model families. Supports blocking and streaming generation.
 
 #### Presets
 
-| Preset | Model | Approx. cached size |
-|---|---|---|
-| `:gpt2` | GPT-2 124M (completion) | ~500 MB |
-| `:smol-lm-2` | SmolLM2-360M-Instruct (ChatML) | ~700 MB |
-| `:smol-lm-2-1-7b` | SmolLM2-1.7B-Instruct (FP16) | ~3.4 GB |
-| `:qwen2` | Qwen2.5-1.5B-Instruct (ChatML) | ~3 GB |
-| `:tiny-llama` | TinyLlama-1.1B-Chat | ~2.2 GB |
-| `:gemma2` | Gemma 2-2B-IT (gated; bring your own files) | — |
+| Preset            | Model                                       | Approx. cached size |
+| ----------------- | ------------------------------------------- | ------------------- |
+| `:gpt2`           | GPT-2 124M (completion)                     | ~500 MB             |
+| `:smol-lm-2`      | SmolLM2-360M-Instruct (ChatML)              | ~700 MB             |
+| `:smol-lm-2-1-7b` | SmolLM2-1.7B-Instruct (FP16)                | ~3.4 GB             |
+| `:qwen2`          | Qwen2.5-1.5B-Instruct (ChatML)              | ~3 GB               |
+| `:tiny-llama`     | TinyLlama-1.1B-Chat                         | ~2.2 GB             |
+| `:gemma2`         | Gemma 2-2B-IT (gated; bring your own files) | —                   |
 
 Each preset bundles its model id, special tokens, stop sequences, chat
 template, and tokenizer. The first call downloads to
@@ -125,10 +125,10 @@ model yourself, and provide it via `:base-dir` or `:model-source`.
 
 ```clojure
 (otg/create {:preset :qwen2
-             :max-new-tokens 100     ;; default 256
-             :temperature    0.7     ;; 0.0 = greedy
-             :top-k          50      ;; 0 = disabled
-             :top-p          0.9})   ;; 0.0 = disabled
+             :max-new-tokens 100 ;; default 256
+             :temperature 0.7    ;; 0.0 = greedy
+             :top-k 50           ;; 0 = disabled
+             :top-p 0.9})        ;; 0.0 = disabled
 ```
 
 #### Model loading

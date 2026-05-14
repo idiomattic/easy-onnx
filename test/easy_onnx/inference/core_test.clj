@@ -14,7 +14,7 @@
   (testing "configurer applies all three settings when all keys are present"
     (let [cfg (core/->session-configurer {:intra-op-num-threads 2
                                           :inter-op-num-threads 3
-                                          :optimization-level   :basic})]
+                                          :optimization-level :basic})]
       (is (instance? SessionConfigurer cfg))
       (with-open [opts (OrtSession$SessionOptions.)]
         (SessionConfigurer/.configure cfg opts)

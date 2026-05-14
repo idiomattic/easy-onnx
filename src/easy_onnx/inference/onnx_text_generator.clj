@@ -10,29 +10,29 @@
 (def Config
   (m/schema
    [:map
-    [:preset           [:enum :gpt2 :smol-lm-2 :smol-lm-2-1-7b :qwen2 :tiny-llama :gemma2]]
-    [:max-new-tokens   {:optional true} [:int    {:min 1}]]
-    [:temperature      {:optional true} [:double {:min 0.0}]]
-    [:top-k            {:optional true} [:int    {:min 0}]]
-    [:top-p            {:optional true} [:double {:min 0.0 :max 1.0}]]
-    [:base-dir         {:optional true} [:string {:min 1}]]
-    [:model-source     {:optional true} :any]
-    [:session-options  {:optional true}
+    [:preset [:enum :gpt2 :smol-lm-2 :smol-lm-2-1-7b :qwen2 :tiny-llama :gemma2]]
+    [:max-new-tokens {:optional true} [:int {:min 1}]]
+    [:temperature {:optional true} [:double {:min 0.0}]]
+    [:top-k {:optional true} [:int {:min 0}]]
+    [:top-p {:optional true} [:double {:min 0.0 :max 1.0}]]
+    [:base-dir {:optional true} [:string {:min 1}]]
+    [:model-source {:optional true} :any]
+    [:session-options {:optional true}
      [:map
       [:intra-op-num-threads {:optional true} [:int {:min 1}]]
       [:inter-op-num-threads {:optional true} [:int {:min 1}]]
-      [:optimization-level   {:optional true} [:enum :none :basic :extended :all]]]]]))
+      [:optimization-level {:optional true} [:enum :none :basic :extended :all]]]]]))
 
 (def ^:private preset-factory-map
-  {:gpt2            #(OnnxTextGenerator/gpt2)
-   :smol-lm-2       #(OnnxTextGenerator/smolLM2)
-   :smol-lm-2-1-7b  #(OnnxTextGenerator/smolLM2_1_7B)
-   :qwen2           #(OnnxTextGenerator/qwen2)
-   :tiny-llama      #(OnnxTextGenerator/tinyLlama)
-   :gemma2          #(OnnxTextGenerator/gemma2)})
+  {:gpt2 #(OnnxTextGenerator/gpt2)
+   :smol-lm-2 #(OnnxTextGenerator/smolLM2)
+   :smol-lm-2-1-7b #(OnnxTextGenerator/smolLM2_1_7B)
+   :qwen2 #(OnnxTextGenerator/qwen2)
+   :tiny-llama #(OnnxTextGenerator/tinyLlama)
+   :gemma2 #(OnnxTextGenerator/gemma2)})
 
-(defn- ^OnnxTextGenerator build-generator
-  [{:keys [preset max-new-tokens temperature top-k top-p session-options] :as config}]
+(defn- build-generator
+  ^OnnxTextGenerator [{:keys [preset max-new-tokens temperature top-k top-p session-options] :as config}]
   (let [builder ((preset-factory-map preset))]
     (when-let [src (core/resolve-source config)]
       (.modelSource builder src))
@@ -49,10 +49,10 @@
     (.build builder)))
 
 (defn- ->result-map [^GenerationResult r]
-  {:text             (.text r)
-   :prompt-tokens    (.promptTokens r)
+  {:text (.text r)
+   :prompt-tokens (.promptTokens r)
    :generated-tokens (.generatedTokens r)
-   :duration         (.duration r)})
+   :duration (.duration r)})
 
 (defrecord Generator [;; Config
                       preset

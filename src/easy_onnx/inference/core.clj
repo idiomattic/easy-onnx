@@ -9,15 +9,15 @@
 
 (def opt-level-map
   "Maps a Clojure keyword to an inference4j OrtSession$SessionOptions$OptLevel."
-  {:none     OrtSession$SessionOptions$OptLevel/NO_OPT
-   :basic    OrtSession$SessionOptions$OptLevel/BASIC_OPT
+  {:none OrtSession$SessionOptions$OptLevel/NO_OPT
+   :basic OrtSession$SessionOptions$OptLevel/BASIC_OPT
    :extended OrtSession$SessionOptions$OptLevel/EXTENDED_OPT
-   :all      OrtSession$SessionOptions$OptLevel/ALL_OPT})
+   :all OrtSession$SessionOptions$OptLevel/ALL_OPT})
 
-(defn ^SessionConfigurer ->session-configurer
+(defn ->session-configurer
   "Build a SessionConfigurer from a Clojure :session-options map.
   Recognizes :intra-op-num-threads, :inter-op-num-threads, :optimization-level."
-  [{:keys [intra-op-num-threads inter-op-num-threads optimization-level]}]
+  ^SessionConfigurer [{:keys [intra-op-num-threads inter-op-num-threads optimization-level]}]
   (reify SessionConfigurer
     (configure [_ opts]
       (let [opts ^OrtSession$SessionOptions opts]
@@ -28,11 +28,11 @@
         (when optimization-level
           (.setOptimizationLevel opts (opt-level-map optimization-level)))))))
 
-(defn ^ModelSource resolve-source
+(defn resolve-source
   "Pick a ModelSource from config keys :model-source / :base-dir.
   Returns nil to mean 'let inference4j use its default (HuggingFaceModelSource)'.
   :model-source takes precedence over :base-dir."
-  [{:keys [model-source base-dir]}]
+  ^ModelSource [{:keys [model-source base-dir]}]
   (cond
     model-source model-source
     base-dir (LocalModelSource. (Path/of ^String base-dir (into-array String [])))
