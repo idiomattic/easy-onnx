@@ -1,11 +1,9 @@
 {:paths ["src" "resources"]
- :deps {org.clojure/clojure {:mvn/version "1.12.4"}
-        com.microsoft.onnxruntime/onnxruntime {:mvn/version "1.25.1"}
-        ai.djl.huggingface/tokenizers {:mvn/version "0.36.0"}
+ :deps {org.clojure/clojure                  {:mvn/version "1.12.4"}
         io.github.inference4j/inference4j-core {:mvn/version "0.10.0"}
-        com.stuartsierra/component {:mvn/version "1.1.0"}
-        metosin/malli {:mvn/version "0.20.1"}
-        com.github.haifengl/smile-core {:mvn/version "6.1.0"}}
+        com.stuartsierra/component           {:mvn/version "1.1.0"}
+        metosin/malli                        {:mvn/version "0.20.1"}
+        com.github.haifengl/smile-core       {:mvn/version "6.1.0"}}
  :aliases
  {:test {:extra-paths ["test"]
          :main-opts ["-m" "kaocha.runner"]
