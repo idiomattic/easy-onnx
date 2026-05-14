@@ -41,6 +41,7 @@ After:
 ## 0.1.0
 
 ### Added
+
 - `easy-onnx.runtime` — ONNX session wrapper with `create` / `component` /
   `run-model` / `close`. AutoCloseable + Stuart Sierra Lifecycle.
 - `easy-onnx.tokenizer` — HuggingFace tokenizer wrapper with `create` /

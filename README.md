@@ -46,11 +46,11 @@ Wraps [inference4j's `SentenceTransformerEmbedder`](https://github.com/inference
 Compatible with all-MiniLM, all-mpnet, BGE, GTE, and E5 family models.
 
 ```clojure
-(ste/create {:model-id     "inference4j/all-MiniLM-L6-v2"
-             :pooling      :mean    ;; :mean | :cls | :max     (default :mean)
-             :normalize?   true     ;; L2-normalize the output  (default false)
-             :text-prefix  "query: " ;; E5/Nomic prefix support (optional)
-             :max-length   512})    ;; truncation length        (default 512)
+(ste/create {:model-id "inference4j/all-MiniLM-L6-v2"
+             :pooling :mean         ;; :mean | :cls | :max     (default :mean)
+             :normalize? true       ;; L2-normalize the output  (default false)
+             :text-prefix "query: " ;; E5/Nomic prefix support (optional)
+             :max-length 512})      ;; truncation length        (default 512)
 ;; => Embedder (started, AutoCloseable + Lifecycle)
 
 (ste/encode embedder "text")        ;; => float[]
