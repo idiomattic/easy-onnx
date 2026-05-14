@@ -135,3 +135,17 @@
       (is (instance? SentenceTransformerEmbedder (:embedder started)))
       (let [stopped (component/stop started)]
         (is (nil? (:embedder stopped)))))))
+
+(deftest missing-model-id-fails-precondition
+  (testing "create without :model-id fails the malli precondition"
+    (is (thrown? AssertionError (ste/create {})))))
+
+(deftest invalid-pooling-fails-precondition
+  (testing "an unknown :pooling value fails the malli precondition"
+    (is (thrown? AssertionError
+                 (ste/create {:model-id model-id :pooling :weighted})))))
+
+(deftest nonexistent-model-id-throws
+  (testing "a model-id that doesn't exist on HuggingFace throws on create"
+    (is (thrown? Exception
+                 (ste/create {:model-id "inference4j/this-model-does-not-exist"})))))
