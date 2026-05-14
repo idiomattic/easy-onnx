@@ -43,23 +43,13 @@ jobs:
           restore-keys: |
             deps-
 
-      - name: Cache MiniLM fixture
-        id: minilm-cache
+      - name: Cache inference4j model cache
         uses: actions/cache@v4
         with:
-          path: resources/ml/all-MiniLM-L6-v2
-          key: minilm-l6-v2-onnx-v1
-
-      - name: Download MiniLM fixture (cache miss)
-        if: steps.minilm-cache.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p resources/ml/all-MiniLM-L6-v2
-          curl -L --fail --silent --show-error \
-            -o resources/ml/all-MiniLM-L6-v2/model.onnx \
-            https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx
-          curl -L --fail --silent --show-error \
-            -o resources/ml/all-MiniLM-L6-v2/tokenizer.json \
-            https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer.json
+          path: ~/.cache/inference4j
+          key: inference4j-models-${{ hashFiles('deps.edn') }}
+          restore-keys: |
+            inference4j-models-
 
       - name: Run tests
         run: clojure -M:test
