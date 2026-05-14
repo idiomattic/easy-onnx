@@ -3,53 +3,91 @@
 [![Clojars Project](https://img.shields.io/clojars/v/net.clojars.idiomattic/easy-onnx.svg)](https://clojars.org/net.clojars.idiomattic/easy-onnx)
 [![CI](https://github.com/idiomattic/easy-onnx/actions/workflows/ci.yml/badge.svg)](https://github.com/idiomattic/easy-onnx/actions/workflows/ci.yml)
 
-A Clojure library for running ONNX models and tokenizing text with
-HuggingFace tokenizers, plus opinionated helpers for sentence-transformer
-text embedding and embedding analysis (DBSCAN clustering, UMAP projection).
+A Clojure library for sentence-transformer text embedding (via
+[inference4j](https://github.com/inference4j/inference4j)) plus embedding
+analysis (DBSCAN clustering, UMAP projection, cosine similarity via
+[smile-core](https://github.com/haifengl/smile)).
 
 > [!WARNING]
-> This library should be considered as in a pre-release state. It will likely be split into separate artifacts
-> for the `tokenizer`, `runtime`, etc. so that each does not carry bloat of the others.
+> This library should be considered pre-release. Both top-level sections
+> (`easy-onnx.inference` and `easy-onnx.analysis`) are designed to be
+> extracted into separate libraries later.
 
 ## Installation
 
 Add to `deps.edn`:
 
 ```clojure
-net.clojars.idiomattic/easy-onnx {:mvn/version "0.1.XXX"}
+net.clojars.idiomattic/easy-onnx {:mvn/version "0.2.XXX"}
 ```
-
-(Maven coordinates are tentative; will be confirmed before first release.)
 
 ## Quickstart
 
 ```clojure
-(require '[easy-onnx.runtime :as runtime]
-         '[easy-onnx.tokenizer :as tokenizer]
-         '[easy-onnx.embed.text :as embed-text]
-         '[easy-onnx.embed :as embed])
+(require '[easy-onnx.inference.sentence-transformer-embedder :as ste]
+         '[easy-onnx.analysis :as analysis])
 
-(with-open [r (runtime/create   {:model-path "path/to/model.onnx"})
-            t (tokenizer/create {:tokenizer-path "path/to/tokenizer.json"})]
-  (let [v1 (embed-text/embed {:runtime r :tokenizer t} "hello world")
-        v2 (embed-text/embed {:runtime r :tokenizer t} "hi there")]
-    (embed/cosine-similarity v1 v2)))
+(with-open [e (ste/create {:model-id "inference4j/all-MiniLM-L6-v2"
+                           :normalize? true})]
+  (let [v1 (ste/encode e "hello world")
+        v2 (ste/encode e "hi there")]
+    (analysis/cosine-similarity v1 v2)))
 ```
+
+The first call to `ste/create` downloads the model (~80MB for MiniLM) to
+`~/.cache/inference4j/inference4j/all-MiniLM-L6-v2/`. Subsequent calls use
+the cache.
 
 ## Sections
 
-- **`easy-onnx.runtime`** — load and run ONNX models. Wraps `OrtEnvironment`
-  - `OrtSession`. `create` returns a started `Session`; `component` returns
-    an unstarted one for use with Stuart Sierra Component. Both implement
-    `AutoCloseable` and Lifecycle.
-- **`easy-onnx.tokenizer`** — wrap a HuggingFace tokenizer. Same shape:
-  `create`, `component`, `encode`, `get-ids`, `get-mask`, `close`.
-- **`easy-onnx.embed`** — modality-agnostic vector helpers: `cosine-similarity`,
-  `cosine-distance`.
-- **`easy-onnx.embed.text`** — text-specific embedding via mean-pooling.
-  Currently sentence-transformer-shaped (e.g., MiniLM).
-- **`easy-onnx.analysis`** — embedding analysis: DBSCAN clustering, UMAP
-  2D projection.
+### `easy-onnx.inference.sentence-transformer-embedder`
+
+Wraps [inference4j's `SentenceTransformerEmbedder`](https://github.com/inference4j/inference4j).
+Compatible with all-MiniLM, all-mpnet, BGE, GTE, and E5 family models.
+
+```clojure
+(ste/create {:model-id     "inference4j/all-MiniLM-L6-v2"
+             :pooling      :mean    ;; :mean | :cls | :max     (default :mean)
+             :normalize?   true     ;; L2-normalize the output  (default false)
+             :text-prefix  "query: " ;; E5/Nomic prefix support (optional)
+             :max-length   512})    ;; truncation length        (default 512)
+;; => Embedder (started, AutoCloseable + Lifecycle)
+
+(ste/encode embedder "text")        ;; => float[]
+(ste/encode-batch embedder ["a" "b"]) ;; => vector of float[]
+(ste/close embedder)                ;; idempotent
+```
+
+#### Model loading
+
+- **Default** (`:model-id` only): auto-download from HuggingFace to
+  `~/.cache/inference4j/`. Models hosted at
+  [huggingface.co/inference4j](https://huggingface.co/inference4j).
+- **Local** (`:base-dir "/some/dir" :model-id "subdir-name"`): load from
+  `<base-dir>/<model-id>/` via `LocalModelSource`.
+- **Custom** (`:model-source <ModelSource-instance>`): bring your own
+  `io.github.inference4j.model.ModelSource`.
+
+#### Component integration
+
+`ste/component` returns an unstarted `Embedder` for use in a Stuart Sierra
+Component system:
+
+```clojure
+(component/system-map
+  :embedder (ste/component {:model-id "inference4j/all-MiniLM-L6-v2"}))
+```
+
+### `easy-onnx.analysis`
+
+Smile-based analysis on raw `float[]` vectors:
+
+```clojure
+(analysis/cosine-similarity v1 v2)  ;; ^double in [-1, 1]
+(analysis/cosine-distance v1 v2)    ;; ^double in [0, 2]
+(analysis/cluster embeddings)       ;; DBSCAN; vector of cluster indices
+(analysis/project-2d embeddings)    ;; UMAP; vector of [x y] pairs
+```
 
 ## JVM flags
 
@@ -70,9 +108,8 @@ to your JVM options. For Clojure CLI projects:
 clojure -M:test
 ```
 
-Tests for `runtime`, `tokenizer`, and `embed.text` require the MiniLM
-fixture at `resources/ml/all-MiniLM-L6-v2/`. Tests skip gracefully when
-the fixture is absent.
+The first run downloads MiniLM to `~/.cache/inference4j/`. Subsequent runs
+are fast (cache hit). No manual fixture download is required.
 
 ## License
 
