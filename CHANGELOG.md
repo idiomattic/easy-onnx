@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 This change log follows the conventions of
 [keepachangelog.com](http://keepachangelog.com/).
 
+## 0.3.0 — 2026-05-14
+
+### Added
+
+- `easy-onnx.inference.onnx-text-generator` — wraps inference4j's `OnnxTextGenerator` for autoregressive text generation. Six presets: `:gpt2`, `:smol-lm-2`, `:smol-lm-2-1-7b`, `:qwen2`, `:tiny-llama`, `:gemma2`. Two verbs: `generate` (blocking) and `generate-streaming` (callback-based). Both return `{:text :prompt-tokens :generated-tokens :duration}`.
+- Sampling config keys: `:max-new-tokens`, `:temperature`, `:top-k`, `:top-p`.
+- `easy-onnx.inference.core` — internal namespace holding shared helpers (`opt-level-map`, `->session-configurer`, `resolve-source`) used by every `inference` task wrapper.
+
+### Changed
+
+- `easy-onnx.inference.sentence-transformer-embedder` now delegates session-options handling and model-source resolution to `easy-onnx.inference.core`. Public API and behavior are unchanged.
+
 ## 0.2.0 — 2026-05-14
 
 ### Changed
