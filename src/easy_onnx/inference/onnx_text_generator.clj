@@ -8,7 +8,11 @@
 (def Config
   (m/schema
    [:map
-    [:preset [:enum :gpt2 :smol-lm-2 :smol-lm-2-1-7b :qwen2 :tiny-llama :gemma2]]]))
+    [:preset           [:enum :gpt2 :smol-lm-2 :smol-lm-2-1-7b :qwen2 :tiny-llama :gemma2]]
+    [:max-new-tokens   {:optional true} [:int    {:min 1}]]
+    [:temperature      {:optional true} [:double {:min 0.0}]]
+    [:top-k            {:optional true} [:int    {:min 0}]]
+    [:top-p            {:optional true} [:double {:min 0.0 :max 1.0}]]]))
 
 (def ^:private preset-factory-map
   {:gpt2            #(OnnxTextGenerator/gpt2)
@@ -19,8 +23,16 @@
    :gemma2          #(OnnxTextGenerator/gemma2)})
 
 (defn- ^OnnxTextGenerator build-generator
-  [{:keys [preset]}]
+  [{:keys [preset max-new-tokens temperature top-k top-p]}]
   (let [builder ((preset-factory-map preset))]
+    (when max-new-tokens
+      (.maxNewTokens builder (int max-new-tokens)))
+    (when temperature
+      (.temperature builder (float temperature)))
+    (when top-k
+      (.topK builder (int top-k)))
+    (when top-p
+      (.topP builder (float top-p)))
     (.build builder)))
 
 (defn- ->result-map [^GenerationResult r]
@@ -31,6 +43,10 @@
 
 (defrecord Generator [;; Config
                       preset
+                      max-new-tokens
+                      temperature
+                      top-k
+                      top-p
 
                       ;; Managed
                       generator]
@@ -53,7 +69,14 @@
 
   Required:
     :preset - one of :gpt2 :smol-lm-2 :smol-lm-2-1-7b :qwen2 :tiny-llama :gemma2.
-              On first call, inference4j downloads to ~/.cache/inference4j/."
+              On first call, inference4j downloads to ~/.cache/inference4j/.
+
+  Optional:
+    :max-new-tokens - maximum number of tokens to generate (default 256).
+    :temperature    - sampling temperature in [0.0, ...). 0.0 = greedy decoding.
+    :top-k          - keep the top-K candidate tokens; 0 disables (default 0).
+    :top-p          - keep tokens whose cumulative probability reaches top-P;
+                      0.0 disables (default 0.0)."
   [config]
   {:pre [(m/validate Config config)]}
   (component/start (map->Generator (assoc config :generator nil))))
