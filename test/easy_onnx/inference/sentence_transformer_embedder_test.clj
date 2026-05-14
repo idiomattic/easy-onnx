@@ -105,3 +105,18 @@
     (is (thrown? Exception
                  (ste/create {:base-dir "/nonexistent/base/dir"
                               :model-id model-id})))))
+
+(deftest session-options-are-accepted
+  (testing ":session-options accepts thread + optimization options without failure"
+    (with-open [e (ste/create {:model-id model-id
+                               :session-options {:intra-op-num-threads 1
+                                                 :inter-op-num-threads 1
+                                                 :optimization-level :all}})]
+      (let [v (ste/encode e "session options test")]
+        (is (= 384 (alength ^floats v)))))))
+
+(deftest invalid-optimization-level-fails
+  (testing "an unknown :optimization-level fails the malli precondition"
+    (is (thrown? AssertionError
+                 (ste/create {:model-id model-id
+                              :session-options {:optimization-level :bogus}})))))
