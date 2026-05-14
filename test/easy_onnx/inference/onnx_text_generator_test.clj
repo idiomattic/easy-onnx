@@ -1,7 +1,9 @@
 (ns easy-onnx.inference.onnx-text-generator-test
   (:require [clojure.test :refer [deftest is testing use-fixtures]]
+            [com.stuartsierra.component :as component]
             [easy-onnx.inference.onnx-text-generator :as otg])
-  (:import [java.time Duration]))
+  (:import [io.github.inference4j.nlp OnnxTextGenerator]
+           [java.time Duration]))
 
 (def preset :smol-lm-2)
 
@@ -89,3 +91,16 @@
     (is (thrown? AssertionError
                  (otg/create {:preset preset
                               :session-options {:optimization-level :bogus}})))))
+
+(deftest component-returns-unstarted
+  (testing "component returns a Generator with no underlying OnnxTextGenerator"
+    (let [c (otg/component {:preset preset})]
+      (is (nil? (:generator c))))))
+
+(deftest component-start-populates-and-stop-clears
+  (testing "component start builds the underlying generator; stop closes and clears it"
+    (let [c (otg/component {:preset preset :max-new-tokens 4})
+          started (component/start c)]
+      (is (instance? OnnxTextGenerator (:generator started)))
+      (let [stopped (component/stop started)]
+        (is (nil? (:generator stopped)))))))
