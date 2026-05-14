@@ -11,32 +11,32 @@
 (def Config
   (m/schema
    [:map
-    [:model-id        [:string {:min 1}]]
-    [:base-dir        {:optional true} [:string {:min 1}]]
-    [:model-source    {:optional true} :any]
-    [:pooling         {:optional true} [:enum :mean :cls :max]]
-    [:normalize?      {:optional true} :boolean]
-    [:text-prefix     {:optional true} [:string {:min 1}]]
-    [:max-length      {:optional true} [:int {:min 1}]]
+    [:model-id [:string {:min 1}]]
+    [:base-dir {:optional true} [:string {:min 1}]]
+    [:model-source {:optional true} :any]
+    [:pooling {:optional true} [:enum :mean :cls :max]]
+    [:normalize? {:optional true} :boolean]
+    [:text-prefix {:optional true} [:string {:min 1}]]
+    [:max-length {:optional true} [:int {:min 1}]]
     [:session-options {:optional true}
      [:map
       [:intra-op-num-threads {:optional true} [:int {:min 1}]]
       [:inter-op-num-threads {:optional true} [:int {:min 1}]]
-      [:optimization-level   {:optional true} [:enum :none :basic :extended :all]]]]]))
+      [:optimization-level {:optional true} [:enum :none :basic :extended :all]]]]]))
 
 (def ^:private pooling-strategy-map
   {:mean PoolingStrategy/MEAN
-   :cls  PoolingStrategy/CLS
-   :max  PoolingStrategy/MAX})
+   :cls PoolingStrategy/CLS
+   :max PoolingStrategy/MAX})
 
 (def ^:private opt-level-map
-  {:none     OrtSession$SessionOptions$OptLevel/NO_OPT
-   :basic    OrtSession$SessionOptions$OptLevel/BASIC_OPT
+  {:none OrtSession$SessionOptions$OptLevel/NO_OPT
+   :basic OrtSession$SessionOptions$OptLevel/BASIC_OPT
    :extended OrtSession$SessionOptions$OptLevel/EXTENDED_OPT
-   :all      OrtSession$SessionOptions$OptLevel/ALL_OPT})
+   :all OrtSession$SessionOptions$OptLevel/ALL_OPT})
 
-(defn- ^SessionConfigurer ->session-configurer
-  [{:keys [intra-op-num-threads inter-op-num-threads optimization-level]}]
+(defn- ->session-configurer
+  ^SessionConfigurer [{:keys [intra-op-num-threads inter-op-num-threads optimization-level]}]
   (reify SessionConfigurer
     (configure [_ opts]
       (let [opts ^OrtSession$SessionOptions opts]

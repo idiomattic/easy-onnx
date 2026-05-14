@@ -69,15 +69,15 @@
 (deftest pooling-cls-differs-from-mean
   (testing "CLS pooling and MEAN pooling produce different embeddings for the same input"
     (with-open [mean-e (ste/create {:model-id model-id :pooling :mean})
-                cls-e  (ste/create {:model-id model-id :pooling :cls})]
+                cls-e (ste/create {:model-id model-id :pooling :cls})]
       (let [text "this sentence is for testing pooling"
             mean-v (ste/encode mean-e text)
-            cls-v  (ste/encode cls-e text)]
+            cls-v (ste/encode cls-e text)]
         (is (not= (seq mean-v) (seq cls-v)))))))
 
 (deftest text-prefix-changes-embedding
   (testing "applying a text-prefix changes the resulting embedding"
-    (with-open [plain    (ste/create {:model-id model-id})
+    (with-open [plain (ste/create {:model-id model-id})
                 prefixed (ste/create {:model-id model-id :text-prefix "query: "})]
       (let [text "what is the capital of France"
             v1 (ste/encode plain text)
