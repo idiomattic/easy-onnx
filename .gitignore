@@ -29,4 +29,3 @@
 /target
 *.onnx
 /docs
-/resources/ml
