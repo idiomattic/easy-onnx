@@ -89,3 +89,19 @@
             result (ste/encode e long-text)]
         (is (= 384 (alength ^floats result)))
         (is (every? #(Float/isFinite %) (seq result)))))))
+
+(deftest base-dir-loads-from-local-cache
+  (testing ":base-dir + :model-id resolve to <base-dir>/<model-id> via LocalModelSource"
+    (let [cache-home (System/getProperty "user.home")
+          base-dir (str cache-home "/.cache/inference4j")
+          sub-id "inference4j/all-MiniLM-L6-v2"]
+      ;; Precondition: the model was already cached when @embedder was built.
+      (with-open [e (ste/create {:base-dir base-dir :model-id sub-id})]
+        (let [v (ste/encode e "local source test")]
+          (is (= 384 (alength ^floats v))))))))
+
+(deftest bogus-base-dir-throws
+  (testing ":base-dir pointing at a nonexistent directory throws on create, even when :model-id is otherwise valid on HuggingFace"
+    (is (thrown? Exception
+                 (ste/create {:base-dir "/nonexistent/base/dir"
+                              :model-id model-id})))))

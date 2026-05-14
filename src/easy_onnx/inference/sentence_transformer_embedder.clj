@@ -1,13 +1,17 @@
 (ns easy-onnx.inference.sentence-transformer-embedder
   (:require [com.stuartsierra.component :as component]
             [malli.core :as m])
-  (:import [io.github.inference4j.nlp PoolingStrategy SentenceTransformerEmbedder]
-           [java.lang AutoCloseable]))
+  (:import [io.github.inference4j.model LocalModelSource ModelSource]
+           [io.github.inference4j.nlp PoolingStrategy SentenceTransformerEmbedder]
+           [java.lang AutoCloseable]
+           [java.nio.file Path]))
 
 (def Config
   (m/schema
    [:map
     [:model-id     [:string {:min 1}]]
+    [:base-dir     {:optional true} [:string {:min 1}]]
+    [:model-source {:optional true} :any]
     [:pooling      {:optional true} [:enum :mean :cls :max]]
     [:normalize?   {:optional true} :boolean]
     [:text-prefix  {:optional true} [:string {:min 1}]]
@@ -18,11 +22,22 @@
    :cls  PoolingStrategy/CLS
    :max  PoolingStrategy/MAX})
 
+(defn- resolve-source
+  "Pick a ModelSource based on config keys.
+  Returns nil to mean 'let inference4j use its default (HuggingFaceModelSource)'."
+  ^ModelSource [{:keys [model-source base-dir]}]
+  (cond
+    model-source model-source
+    base-dir (LocalModelSource. (Path/of ^String base-dir (into-array String [])))
+    :else nil))
+
 (defn- build-embedder
   ^SentenceTransformerEmbedder
-  [{:keys [model-id pooling normalize? text-prefix max-length]}]
+  [{:keys [model-id pooling normalize? text-prefix max-length] :as config}]
   (let [builder (SentenceTransformerEmbedder/builder)]
     (.modelId builder model-id)
+    (when-let [src (resolve-source config)]
+      (.modelSource builder src))
     (when pooling
       (.poolingStrategy builder (pooling-strategy-map pooling)))
     (when normalize?
@@ -35,6 +50,8 @@
 
 (defrecord Embedder [;; Config
                      model-id
+                     base-dir
+                     model-source
                      pooling
                      normalize?
                      text-prefix
@@ -64,6 +81,11 @@
                 On first call, inference4j downloads to ~/.cache/inference4j/.
 
   Optional:
+    :base-dir    - Local directory containing model subdirectories. Switches to
+                   LocalModelSource: <base-dir>/<model-id>/ must exist with model.onnx
+                   and vocab.txt. Useful for offline use or custom model layouts.
+    :model-source - Escape hatch: a Java io.github.inference4j.model.ModelSource
+                    instance, used directly. Overrides :base-dir if both set.
     :pooling     - one of :mean :cls :max (default :mean).
     :normalize?  - L2-normalize the output (default false). Recommended when comparing
                    with cosine similarity (e.g. BGE, GTE, E5 families).
