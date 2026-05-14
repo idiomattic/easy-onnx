@@ -1,6 +1,8 @@
 (ns easy-onnx.inference.sentence-transformer-embedder-test
   (:require [clojure.test :refer [deftest is testing use-fixtures]]
-            [easy-onnx.inference.sentence-transformer-embedder :as ste]))
+            [com.stuartsierra.component :as component]
+            [easy-onnx.inference.sentence-transformer-embedder :as ste])
+  (:import [io.github.inference4j.nlp SentenceTransformerEmbedder]))
 
 (def model-id "inference4j/all-MiniLM-L6-v2")
 
@@ -120,3 +122,16 @@
     (is (thrown? AssertionError
                  (ste/create {:model-id model-id
                               :session-options {:optimization-level :bogus}})))))
+
+(deftest component-returns-unstarted
+  (testing "component returns an Embedder with no underlying SentenceTransformerEmbedder"
+    (let [c (ste/component {:model-id model-id})]
+      (is (nil? (:embedder c))))))
+
+(deftest component-start-populates-and-stop-clears
+  (testing "component start builds the underlying embedder; stop closes and clears it"
+    (let [c (ste/component {:model-id model-id})
+          started (component/start c)]
+      (is (instance? SentenceTransformerEmbedder (:embedder started)))
+      (let [stopped (component/stop started)]
+        (is (nil? (:embedder stopped)))))))
