@@ -60,3 +60,8 @@
   "Encode `text` into a float[] embedding."
   [{:keys [^SentenceTransformerEmbedder embedder]} ^String text]
   (SentenceTransformerEmbedder/.encode embedder text))
+
+(defn encode-batch
+  "Encode each text in `texts` into a float[] embedding. Returns a vector of float[]."
+  [{:keys [^SentenceTransformerEmbedder embedder]} texts]
+  (vec (SentenceTransformerEmbedder/.encodeBatch embedder texts)))

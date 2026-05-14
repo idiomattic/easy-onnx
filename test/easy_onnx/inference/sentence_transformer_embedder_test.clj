@@ -39,3 +39,18 @@
     (let [e1 (ste/encode @embedder "buy groceries")
           e2 (ste/encode @embedder "deploy to production")]
       (is (not= (seq e1) (seq e2))))))
+
+(deftest encode-batch-returns-one-embedding-per-input
+  (testing "encode-batch preserves input order and count"
+    (let [texts ["foo" "bar baz" "the quick brown fox"]
+          results (ste/encode-batch @embedder texts)]
+      (is (= 3 (count results)))
+      (is (every? #(instance? (Class/forName "[F") %) results))
+      (is (every? #(= 384 (alength ^floats %)) results)))))
+
+(deftest encode-batch-matches-individual-encodes
+  (testing "encode-batch results equal individual encode results"
+    (let [texts ["one" "two"]
+          batch (ste/encode-batch @embedder texts)
+          singles (mapv #(ste/encode @embedder %) texts)]
+      (is (= (mapv seq batch) (mapv seq singles))))))
