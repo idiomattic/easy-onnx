@@ -73,3 +73,19 @@
     (is (thrown? Exception
                  (otg/create {:preset preset
                               :base-dir "/nonexistent/base/dir"})))))
+
+(deftest session-options-are-accepted
+  (testing ":session-options accepts thread + optimization options"
+    (with-open [g (otg/create {:preset preset
+                               :max-new-tokens 4
+                               :session-options {:intra-op-num-threads 1
+                                                 :inter-op-num-threads 1
+                                                 :optimization-level :all}})]
+      (let [result (otg/generate g "Hi")]
+        (is (pos-int? (:generated-tokens result)))))))
+
+(deftest invalid-optimization-level-fails-precondition
+  (testing "an unknown :optimization-level fails the malli precondition"
+    (is (thrown? AssertionError
+                 (otg/create {:preset preset
+                              :session-options {:optimization-level :bogus}})))))

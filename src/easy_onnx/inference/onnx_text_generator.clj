@@ -16,7 +16,12 @@
     [:top-k            {:optional true} [:int    {:min 0}]]
     [:top-p            {:optional true} [:double {:min 0.0 :max 1.0}]]
     [:base-dir         {:optional true} [:string {:min 1}]]
-    [:model-source     {:optional true} :any]]))
+    [:model-source     {:optional true} :any]
+    [:session-options  {:optional true}
+     [:map
+      [:intra-op-num-threads {:optional true} [:int {:min 1}]]
+      [:inter-op-num-threads {:optional true} [:int {:min 1}]]
+      [:optimization-level   {:optional true} [:enum :none :basic :extended :all]]]]]))
 
 (def ^:private preset-factory-map
   {:gpt2            #(OnnxTextGenerator/gpt2)
@@ -27,10 +32,12 @@
    :gemma2          #(OnnxTextGenerator/gemma2)})
 
 (defn- ^OnnxTextGenerator build-generator
-  [{:keys [preset max-new-tokens temperature top-k top-p] :as config}]
+  [{:keys [preset max-new-tokens temperature top-k top-p session-options] :as config}]
   (let [builder ((preset-factory-map preset))]
     (when-let [src (core/resolve-source config)]
       (.modelSource builder src))
+    (when session-options
+      (.sessionOptions builder (core/->session-configurer session-options)))
     (when max-new-tokens
       (.maxNewTokens builder (int max-new-tokens)))
     (when temperature
@@ -55,6 +62,7 @@
                       top-p
                       base-dir
                       model-source
+                      session-options
 
                       ;; Managed
                       generator]
@@ -89,7 +97,11 @@
                       LocalModelSource: <base-dir>/<preset-model-id>/ must exist.
                       Useful for offline use or custom model layouts.
     :model-source   - Escape hatch: a Java io.github.inference4j.model.ModelSource
-                      instance, used directly. Overrides :base-dir if both set."
+                      instance, used directly. Overrides :base-dir if both set.
+    :session-options - Map of ONNX Runtime session options:
+                       :intra-op-num-threads - int. Threads within a single op.
+                       :inter-op-num-threads - int. Threads parallelizing across ops.
+                       :optimization-level   - one of :none :basic :extended :all."
   [config]
   {:pre [(m/validate Config config)]}
   (component/start (map->Generator (assoc config :generator nil))))
